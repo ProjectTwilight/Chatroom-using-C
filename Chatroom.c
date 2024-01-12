@@ -134,7 +134,6 @@ void AddControls(HWND hWnd){
     HBITMAP hBitmap = (HBITMAP)LoadImageW(NULL, L"Logo.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     if (hBitmap == NULL) {
         MessageBoxW(NULL, L"Failed to load bitmap!", L"Error", MB_OK | MB_ICONERROR);
-        return;
     }
 
     hName = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD |WS_BORDER | SS_LEFT| ES_MULTILINE | ES_AUTOVSCROLL, 
