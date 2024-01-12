@@ -17,7 +17,7 @@
 
 #define IP_TARGET "127.0.0.1"
 
-//#define IP_TARGET "192.168.254.137"
+// #define IP_TARGET "192.168.118.162"
 
 
 #define SRC_PORT 12345
@@ -57,7 +57,7 @@ void encrypt(char* input, char* output) {
         toBinary(*input, binStr);
 
         // Complement the binary
-        for (int i = 4; i < 8; ++i) {
+        for (int i = 0; i < 8; ++i) {
             binStr[i] = (binStr[i] == '0') ? '1' : '0';
         }
 
