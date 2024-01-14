@@ -15,22 +15,21 @@
 #define SEND_BUTTON 4
 #define MAX_MESSAGE_SIZE 50000
 
-#define IP_TARGET "127.0.0.1"
 
-// #define IP_TARGET "192.168.118.162"
+// #define targetIP "192.168.118.162"
+
+
+// #define SRC_PORT 12345
+// #define targetPort 54321
 
 
 #define SRC_PORT 12345
-#define DST_PORT 54321
 
 
-// #define SRC_PORT 54321
-// #define DST_PORT 12345
-
-
-HWND hWndMain, hName, lChatBox, rChatBox, hTypeBox, hSendButton, hLogo, hSetNameButton, hBackground;
+HWND hWndMain, hName, lChatBox, rChatBox, hTypeBox, hSendButton, hLogo, hSetNameButton, hBackground, hDestPort, hDestIP;
 wchar_t  message[MAX_MESSAGE_SIZE], lFullMessage[MAX_MESSAGE_SIZE], rFullMessage[MAX_MESSAGE_SIZE], userName[MAX_MESSAGE_SIZE] = L"", messageToSend[MAX_MESSAGE_SIZE];
-char sentMessage[MAX_MESSAGE_SIZE], encryptedMessage[MAX_MESSAGE_SIZE], newMessage[MAX_MESSAGE_SIZE];
+char sentMessage[MAX_MESSAGE_SIZE], encryptedMessage[MAX_MESSAGE_SIZE], newMessage[MAX_MESSAGE_SIZE], targetIP[100] = " ";
+int targetPort;
 BOOL bEnd = FALSE;
 SOCKET sock;
 
@@ -90,12 +89,12 @@ void decrypt(char* input, char* output) {
 BOOL SendData(char* msg){
     SOCKADDR_IN sendAddR = {0};
     sendAddR.sin_family = AF_INET;
-    sendAddR.sin_port = htons(DST_PORT);
-    sendAddR.sin_addr.s_addr = inet_addr(IP_TARGET);
+    sendAddR.sin_port = htons(targetPort);
+    sendAddR.sin_addr.s_addr = inet_addr(targetIP);
 
     int sendResult = sendto(sock, msg, strlen(msg), 0, (SOCKADDR*)&sendAddR, sizeof(sendAddR));
     if (sendResult == SOCKET_ERROR) {
-        MessageBoxW(NULL, L"Failed to send message!", L"Error", MB_OK | MB_ICONERROR);
+        MessageBoxW(NULL, L"Failed to send message! Check Target IP", L"Error", MB_OK | MB_ICONERROR);
         return FALSE;
     }
     return TRUE;
@@ -134,16 +133,17 @@ void AddControls(HWND hWnd){
     HBITMAP hBitmap = (HBITMAP)LoadImageW(NULL, L"Logo.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     if (hBitmap == NULL) {
         MessageBoxW(NULL, L"Failed to load bitmap!", L"Error", MB_OK | MB_ICONERROR);
+        return;
     }
 
     hName = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD |WS_BORDER | SS_LEFT| ES_MULTILINE | ES_AUTOVSCROLL, 
-            10, 5, 195, 30, hWnd, NULL, NULL, NULL);
+            10, 5, 115, 30, hWnd, NULL, NULL, NULL);
             
     hBackground = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD | SS_LEFT| ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_DISABLED, 
             10, 40, 364, 442, hWnd, NULL, NULL, NULL);
 
     hSetNameButton = CreateWindowW(L"Button", L"✓", WS_VISIBLE | WS_CHILD, 
-            210, 5, 30, 30, hWnd, (HMENU)ID_BUTTON, NULL, NULL);
+            128, 6, 30, 30, hWnd, (HMENU)ID_BUTTON, NULL, NULL);
     lChatBox = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD | SS_LEFT| ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_DISABLED, 
             15, 45, 175.5, 432, hWnd, NULL, NULL, NULL);
     rChatBox = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD | SS_RIGHT| ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_DISABLED, 
@@ -154,12 +154,20 @@ void AddControls(HWND hWnd){
             274, 490, 100, 60, hWnd, (HMENU)SEND_BUTTON, NULL, NULL);
     SendMessage(hSendButton, BM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)hBitmap);
 
+    hDestIP = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD | SS_CENTER | WS_BORDER, 
+            168, 11, 120, 20, hWnd, NULL, NULL, NULL);
+    hDestPort = CreateWindowW(L"Edit", L"", WS_VISIBLE | WS_CHILD | SS_CENTER | WS_BORDER, 
+            290, 11, 80, 20, hWnd, NULL, NULL, NULL);
+            
+    
+
     MessageBoxW(hWnd, L"Please Enter Your Name First", L"Info", MB_OK | MB_ICONINFORMATION);
 }
 
 LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp){
     static HBRUSH hbrBackground = NULL;
     static HBRUSH hbrSendButton = NULL;
+    wchar_t tempDestIP[50], tempDestPort[50];
 
     switch(msg)
     {
@@ -182,8 +190,18 @@ LRESULT CALLBACK WindowProcedure(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp){
                     break;
                 case SEND_BUTTON:
                     GetWindowTextW(hTypeBox, message, 50000);
+                    GetWindowTextW(hDestIP, tempDestIP, 50);
+                    GetWindowTextW(hDestPort, tempDestPort, 50);
+
+                    WideCharToMultiByte(CP_ACP, 0, tempDestIP, -1, targetIP, sizeof(targetIP), NULL, NULL);
+
+                    targetPort = wcstol(tempDestPort, NULL, 10);
 
                     if(wcscmp(message, L"") == 0){
+                        break;
+                    }
+                    if(wcscmp(tempDestPort, L"") == 0){
+                        MessageBoxW(hWnd, L"Invalid Destination Port!", L"Info", MB_OK | MB_ICONEXCLAMATION);
                         break;
                     }
 
